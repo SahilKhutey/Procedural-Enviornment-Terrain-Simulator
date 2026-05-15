@@ -1,0 +1,20 @@
+[
+  {
+    "name": "Tree",
+    "minScale": 0.8,
+    "maxScale": 1.8,
+    "spawnProbability": 0.08,
+    "minHeight": 6.0,
+    "maxHeight": 22.0,
+    "maxSlope": 0.12
+  },
+  {
+    "name": "Grass",
+    "minScale": 0.5,
+    "maxScale": 1.2,
+    "spawnProbability": 0.35,
+    "minHeight": 4.0,
+    "maxHeight": 28.0,
+    "maxSlope": 0.25
+  }
+]

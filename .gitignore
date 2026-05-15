@@ -1,0 +1,5 @@
+build/
+build-*/
+*.log
+.http-server.out.log
+.http-server.err.log

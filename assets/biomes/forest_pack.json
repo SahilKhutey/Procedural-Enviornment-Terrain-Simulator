@@ -1,0 +1,12 @@
+{
+    "biome": "Forest",
+    "terrain": {
+        "grass": [0.1, 0.4, 0.2],
+        "rock": [0.3, 0.3, 0.3],
+        "snow": [0.8, 0.8, 0.9]
+    },
+    "ecosystem": {
+        "trees": { "model": "pine", "density": 0.4, "scale": [1.5, 3.0] },
+        "rocks": { "model": "mossy_rock", "density": 0.2, "scale": [1.0, 2.0] }
+    }
+}

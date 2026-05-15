@@ -1,0 +1,190 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>PETS | Procedural Environmental Terrain Simulator</title>
+    <link rel="stylesheet" href="style.css">
+    <link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@400;500;700&family=JetBrains+Mono:wght@400;700&display=swap" rel="stylesheet">
+</head>
+<body>
+    <!-- Engine Canvas -->
+    <canvas id="engine-viewport"></canvas>
+
+    <!-- Mission Control UI -->
+    <div id="ui-root">
+        <header class="glass">
+            <div class="logo">
+                <span class="pulse"></span>
+                <h1>PETS <span>v1.0.web</span></h1>
+            </div>
+            <div class="telemetry">
+                <div class="stat"><label>FPS</label><span id="stat-fps">60</span></div>
+                <div class="stat"><label>INSTANCES</label><span id="stat-instances">12,400</span></div>
+                <div class="stat"><label>TIME</label><span id="stat-time">12:00</span></div>
+                <button id="btn-play" class="primary-btn" style="margin-left:20px; padding:5px 15px; font-size:0.7rem;">ENTER SIMULATOR</button>
+            </div>
+        </header>
+
+        <aside class="glass" id="control-panel">
+            <div class="tabs">
+                <button class="tab-btn active" data-tab="terrain">Terrain</button>
+                <button class="tab-btn" data-tab="biome">Biome</button>
+                <button class="tab-btn" data-tab="env">Water + Time</button>
+                <button class="tab-btn" data-tab="ecosystem">Ecosystem</button>
+                <button class="tab-btn" data-tab="render">Render</button>
+            </div>
+
+            <div class="tab-content" id="terrain">
+                <div class="control-group">
+                    <label>Amplitude</label>
+                    <input type="range" id="input-amplitude" min="0" max="100" value="45">
+                </div>
+                <div class="control-group">
+                    <label>Complexity</label>
+                    <input type="range" id="input-frequency" min="0.001" max="0.05" step="0.001" value="0.015">
+                </div>
+                <div class="control-group">
+                    <label>Octaves</label>
+                    <input type="range" id="input-octaves" min="1" max="8" step="1" value="6">
+                </div>
+                <div class="control-group">
+                    <label>Fog Density</label>
+                    <input type="range" id="input-fog" min="0" max="0.02" step="0.0005" value="0.0004">
+                </div>
+                <div class="control-group">
+                    <label>Grass Biome Color</label>
+                    <input type="color" id="input-grass-color" value="#2d5a27">
+                </div>
+                <div class="control-group">
+                    <label>Rock Biome Color</label>
+                    <input type="color" id="input-rock-color" value="#4a4a4a">
+                </div>
+                <button id="btn-regenerate" class="primary-btn">Regenerate Seed</button>
+            </div>
+
+            <div class="tab-content hidden" id="biome">
+                <div class="control-group">
+                    <label>Biome Preset</label>
+                    <select id="input-biome-preset"></select>
+                    <p class="control-note" id="biome-note"></p>
+                </div>
+                <div class="control-group">
+                    <label>Material Preset</label>
+                    <select id="input-material-preset"></select>
+                    <p class="control-note" id="material-note"></p>
+                </div>
+                <div class="control-group">
+                    <label>Tree Model</label>
+                    <select id="input-tree-variant"></select>
+                    <p class="control-note" id="tree-note"></p>
+                </div>
+                <div class="control-group">
+                    <label>Rock Model</label>
+                    <select id="input-rock-variant"></select>
+                    <p class="control-note" id="rock-note"></p>
+                </div>
+                <div class="control-group">
+                    <label>Fern Model</label>
+                    <select id="input-fern-variant"></select>
+                    <p class="control-note" id="fern-note"></p>
+                </div>
+            </div>
+
+            <div class="tab-content hidden" id="env">
+                <div class="control-group">
+                    <label>World Time</label>
+                    <input type="range" id="input-time" min="0" max="24" step="0.1" value="12">
+                    <div class="preset-group" style="display:flex; gap:5px; margin-top:10px;">
+                        <button class="preset-btn" onclick="window.engine.setTime(6)">DAWN</button>
+                        <button class="preset-btn" onclick="window.engine.setTime(12)">NOON</button>
+                        <button class="preset-btn" onclick="window.engine.setTime(18.5)">DUSK</button>
+                        <button class="preset-btn" onclick="window.engine.setTime(0)">NIGHT</button>
+                    </div>
+                </div>
+                <div class="control-group">
+                    <label>Auto-Cycle Time</label>
+                    <input type="checkbox" id="input-autocycle">
+                </div>
+                <div class="control-group">
+                    <label>Water Level</label>
+                    <input type="range" id="input-water-level" min="-20" max="40" step="0.5" value="10">
+                </div>
+                <div class="control-group">
+                    <label>Wave Strength</label>
+                    <input type="range" id="input-wave-strength" min="0" max="6" step="0.1" value="1.5">
+                </div>
+                <div class="control-group">
+                    <label>Wave Speed</label>
+                    <input type="range" id="input-wave-speed" min="0" max="3" step="0.05" value="0.8">
+                </div>
+            </div>
+
+            <div class="tab-content hidden" id="ecosystem">
+                <div class="control-group">
+                    <label>Tree Density</label>
+                    <input type="range" id="input-tree-density" min="0" max="3000" step="50" value="900">
+                </div>
+                <div class="control-group">
+                    <label>Rock Density</label>
+                    <input type="range" id="input-rock-density" min="0" max="1800" step="25" value="320">
+                </div>
+                <div class="control-group">
+                    <label>Fern Density</label>
+                    <input type="range" id="input-fern-density" min="0" max="3000" step="50" value="1500">
+                </div>
+                <div class="control-group">
+                    <label>Distribution Min Height</label>
+                    <input type="range" id="input-distribution-min-height" min="-50" max="180" step="1" value="4">
+                </div>
+                <div class="control-group">
+                    <label>Distribution Max Height</label>
+                    <input type="range" id="input-distribution-max-height" min="0" max="260" step="1" value="120">
+                </div>
+                <div class="control-group">
+                    <label>Distribution Slope Limit</label>
+                    <input type="range" id="input-distribution-slope" min="0.05" max="1" step="0.01" value="0.55">
+                </div>
+                <div class="control-group">
+                    <label>Scale Min</label>
+                    <input type="range" id="input-scale-min" min="0.2" max="2" step="0.05" value="0.8">
+                </div>
+                <div class="control-group">
+                    <label>Scale Max</label>
+                    <input type="range" id="input-scale-max" min="0.5" max="3" step="0.05" value="1.3">
+                </div>
+            </div>
+
+            <div class="tab-content hidden" id="render">
+                <div class="control-group">
+                    <label>Exposure</label>
+                    <input type="range" id="input-exposure" min="0.1" max="3" step="0.1" value="1.2">
+                </div>
+                <div class="control-group">
+                    <label>Bloom</label>
+                    <input type="range" id="input-bloom" min="0" max="2" step="0.1" value="0.8">
+                </div>
+                <div class="control-group">
+                    <label>Wireframe</label>
+                    <input type="checkbox" id="input-wireframe">
+                </div>
+            </div>
+        </aside>
+
+        <footer class="glass-lite">
+            <p>Final Year Graphics Project | Digital Twin Simulation Environment</p>
+        </footer>
+    </div>
+
+    <!-- Core Libraries -->
+    <script type="importmap">
+        {
+            "imports": {
+                "three": "https://unpkg.com/three@0.155.0/build/three.module.js",
+                "three/addons/": "https://unpkg.com/three@0.155.0/examples/jsm/"
+            }
+        }
+    </script>
+    <script type="module" src="engine.js"></script>
+</body>
+</html>

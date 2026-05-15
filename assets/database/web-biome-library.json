@@ -1,0 +1,174 @@
+{
+  "biomes": [
+    {
+      "id": "plains",
+      "label": "Plains",
+      "description": "Open meadow terrain with light vegetation and scattered stones.",
+      "materialPreset": "meadow",
+      "treeVariant": "pine",
+      "rockVariant": "pebble",
+      "fernVariant": "tuft",
+      "terrain": { "amplitude": 38, "frequency": 0.010, "octaves": 5 },
+      "ecosystem": {
+        "treeDensity": 900,
+        "rockDensity": 320,
+        "fernDensity": 1500,
+        "distributionMinHeight": 4,
+        "distributionMaxHeight": 110,
+        "distributionSlopeLimit": 0.50,
+        "vegetationScaleMin": 0.75,
+        "vegetationScaleMax": 1.25
+      },
+      "water": { "level": 8, "waveStrength": 1.2, "waveSpeed": 0.7 }
+    },
+    {
+      "id": "forest",
+      "label": "Forest",
+      "description": "Dense vegetation with richer greens, softer rock tones, and stronger canopy.",
+      "materialPreset": "forest-floor",
+      "treeVariant": "oak",
+      "rockVariant": "mossy",
+      "fernVariant": "fan",
+      "terrain": { "amplitude": 55, "frequency": 0.014, "octaves": 6 },
+      "ecosystem": {
+        "treeDensity": 1500,
+        "rockDensity": 420,
+        "fernDensity": 2100,
+        "distributionMinHeight": 8,
+        "distributionMaxHeight": 130,
+        "distributionSlopeLimit": 0.42,
+        "vegetationScaleMin": 0.95,
+        "vegetationScaleMax": 1.55
+      },
+      "water": { "level": 10, "waveStrength": 1.6, "waveSpeed": 0.85 }
+    },
+    {
+      "id": "mountain",
+      "label": "Mountain",
+      "description": "Sharper elevation with sparse trees, stronger rock presence, and cooler materials.",
+      "materialPreset": "alpine-stone",
+      "treeVariant": "dead",
+      "rockVariant": "cliff",
+      "fernVariant": "bush",
+      "terrain": { "amplitude": 82, "frequency": 0.018, "octaves": 7 },
+      "ecosystem": {
+        "treeDensity": 420,
+        "rockDensity": 960,
+        "fernDensity": 650,
+        "distributionMinHeight": 18,
+        "distributionMaxHeight": 180,
+        "distributionSlopeLimit": 0.68,
+        "vegetationScaleMin": 0.9,
+        "vegetationScaleMax": 1.9
+      },
+      "water": { "level": 4, "waveStrength": 0.7, "waveSpeed": 0.55 }
+    }
+  ],
+  "treeVariants": [
+    {
+      "id": "pine",
+      "label": "Pine",
+      "description": "Tall conifer silhouette suited for plains and foothills.",
+      "source": "https://www.quickmesh.dev/tree/",
+      "license": "Source reference"
+    },
+    {
+      "id": "oak",
+      "label": "Oak",
+      "description": "Rounded broadleaf canopy for fuller forest coverage.",
+      "source": "https://kenney.nl/assets/nature-kit",
+      "license": "CC0 source pack"
+    },
+    {
+      "id": "dead",
+      "label": "Dead Tree",
+      "description": "Dry branch-heavy tree profile for harsher mountain zones.",
+      "source": "https://poly.pizza/search/dead%20tree",
+      "license": "Marketplace source reference"
+    }
+  ],
+  "rockVariants": [
+    {
+      "id": "pebble",
+      "label": "Pebble Cluster",
+      "description": "Small rounded stone grouping for light scatter.",
+      "source": "https://poly.pizza/search/rock",
+      "license": "Marketplace source reference"
+    },
+    {
+      "id": "mossy",
+      "label": "Mossy Rock",
+      "description": "Rounded medium rock profile for damp forest floors.",
+      "source": "https://kenney.nl/assets/nature-kit",
+      "license": "CC0 source pack"
+    },
+    {
+      "id": "cliff",
+      "label": "Cliff Spire",
+      "description": "Sharper stone form for mountain passes and steeper slopes.",
+      "source": "https://polyhaven.com/models",
+      "license": "CC0 source library"
+    }
+  ],
+  "fernVariants": [
+    {
+      "id": "fan",
+      "label": "Fan Fern",
+      "description": "Wide frond spread for denser understory coverage.",
+      "source": "https://polyhaven.com/models",
+      "license": "CC0 source library"
+    },
+    {
+      "id": "bush",
+      "label": "Bush Fern",
+      "description": "Short clustered foliage for alpine and shaded pockets.",
+      "source": "https://poly.pizza/search/fern",
+      "license": "Marketplace source reference"
+    },
+    {
+      "id": "tuft",
+      "label": "Tuft Fern",
+      "description": "Lightweight grass-fern hybrid for plains and edges.",
+      "source": "https://kenney.nl/assets/nature-kit",
+      "license": "CC0 source pack"
+    }
+  ],
+  "materialPresets": [
+    {
+      "id": "meadow",
+      "label": "Meadow",
+      "description": "Bright grass, warm rock, and clear water for open fields.",
+      "grassColor": "#4c9a49",
+      "rockColor": "#6f655c",
+      "waterColor": "#3c9fd8",
+      "fogColor": "#95cfff",
+      "waterOpacity": 0.48,
+      "source": "https://ambientcg.com/list?category=Ground",
+      "license": "CC0 material source"
+    },
+    {
+      "id": "forest-floor",
+      "label": "Forest Floor",
+      "description": "Darker vegetation and damp rock tones with deeper water.",
+      "grassColor": "#2f6b3d",
+      "rockColor": "#5d6459",
+      "waterColor": "#2b7ca3",
+      "fogColor": "#7fb7a8",
+      "waterOpacity": 0.56,
+      "source": "https://polyhaven.com/textures",
+      "license": "CC0 material source"
+    },
+    {
+      "id": "alpine-stone",
+      "label": "Alpine Stone",
+      "description": "Cooler gray rock palette with sparse grass and crisp water.",
+      "grassColor": "#6c8257",
+      "rockColor": "#8a8f97",
+      "waterColor": "#4a84b6",
+      "fogColor": "#b9c8d8",
+      "waterOpacity": 0.42,
+      "source": "https://polyhaven.com/textures",
+      "license": "CC0 material source"
+    }
+  ]
+}
