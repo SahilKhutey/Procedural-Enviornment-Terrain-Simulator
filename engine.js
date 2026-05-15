@@ -83,6 +83,7 @@ class PETSEngine {
 
         this.library = null;
         this.ecosystem = {};
+        this.ecosystemRebuildHandle = null;
         this.boot();
     }
 
@@ -92,8 +93,8 @@ class PETSEngine {
         this.populateControls();
         this.applyBiomePreset(this.params.activeBiome);
         this.setupEvents();
-        this.setupEcosystem();
         this.animate();
+        this.scheduleEcosystemRebuild();
     }
 
     async loadLibrary() {
@@ -332,7 +333,7 @@ class PETSEngine {
         this.updateWaterVisuals();
         this.syncControls();
         this.updateAssetNotes();
-        if (this.terrain) this.setupEcosystem();
+        if (this.terrain) this.scheduleEcosystemRebuild();
     }
 
     applyMaterialPreset(id) {
@@ -419,6 +420,83 @@ class PETSEngine {
         this.water.position.y = this.params.waterLevel + Math.sin(this.clock.elapsedTime * this.params.waveSpeed) * this.params.waveStrength;
     }
 
+    fract(value) {
+        return value - Math.floor(value);
+    }
+
+    mix(a, b, t) {
+        return a * (1 - t) + b * t;
+    }
+
+    smoothstep01(t) {
+        return t * t * (3 - 2 * t);
+    }
+
+    hash2(x, z) {
+        const x1 = this.fract(x * 0.1031);
+        const y1 = this.fract(z * 0.1031);
+        const z1 = this.fract(x * 0.1031);
+
+        const p3x = x1;
+        const p3y = y1;
+        const p3z = z1;
+        const dot = p3x * (p3y + 33.33) + p3y * (p3z + 33.33) + p3z * (p3x + 33.33);
+        const qx = p3x + dot;
+        const qy = p3y + dot;
+        const qz = p3z + dot;
+        return this.fract((qx + qy) * qz + this.params.seed);
+    }
+
+    noise2(x, z) {
+        const ix = Math.floor(x);
+        const iz = Math.floor(z);
+        const fx = this.fract(x);
+        const fz = this.fract(z);
+        const ux = this.smoothstep01(fx);
+        const uz = this.smoothstep01(fz);
+
+        const n00 = this.hash2(ix, iz);
+        const n10 = this.hash2(ix + 1, iz);
+        const n01 = this.hash2(ix, iz + 1);
+        const n11 = this.hash2(ix + 1, iz + 1);
+
+        return this.mix(this.mix(n00, n10, ux), this.mix(n01, n11, ux), uz);
+    }
+
+    fbm2(x, z) {
+        let value = 0;
+        let amplitude = 0.5;
+        let px = x;
+        let pz = z;
+        const octaveCount = Math.min(8, Math.max(1, Math.floor(this.params.octaves)));
+
+        for (let i = 0; i < octaveCount; i += 1) {
+            let noise = this.noise2(px, pz);
+            if (this.params.mode > 0.5) {
+                noise = 1 - Math.abs(noise * 2 - 1);
+            }
+            value += amplitude * noise;
+            px *= 2;
+            pz *= 2;
+            amplitude *= 0.5;
+        }
+
+        return value;
+    }
+
+    sampleTerrainHeight(x, z) {
+        return this.fbm2(x * this.params.frequency, z * this.params.frequency) * this.params.amplitude;
+    }
+
+    sampleTerrainNormal(x, z) {
+        const step = 2.0;
+        const hL = this.sampleTerrainHeight(x - step, z);
+        const hR = this.sampleTerrainHeight(x + step, z);
+        const hD = this.sampleTerrainHeight(x, z - step);
+        const hU = this.sampleTerrainHeight(x, z + step);
+        return new THREE.Vector3(hL - hR, 2 * step, hD - hU).normalize();
+    }
+
     clearEcosystem() {
         Object.values(this.ecosystem).forEach((entry) => {
             if (!entry) return;
@@ -429,6 +507,16 @@ class PETSEngine {
             });
         });
         this.ecosystem = {};
+    }
+
+    scheduleEcosystemRebuild() {
+        if (this.ecosystemRebuildHandle !== null) {
+            cancelAnimationFrame(this.ecosystemRebuildHandle);
+        }
+        this.ecosystemRebuildHandle = requestAnimationFrame(() => {
+            this.ecosystemRebuildHandle = null;
+            this.setupEcosystem();
+        });
     }
 
     setupEcosystem() {
@@ -472,7 +560,6 @@ class PETSEngine {
 
     spawnCategory(state, count, options) {
         if (!state) return;
-        const raycaster = new THREE.Raycaster();
         const up = new THREE.Vector3(0, 1, 0);
         const dummy = new THREE.Object3D();
         let placed = 0;
@@ -483,12 +570,8 @@ class PETSEngine {
             attempts += 1;
             const x = (Math.random() - 0.5) * (this.worldSize * 0.82);
             const z = (Math.random() - 0.5) * (this.worldSize * 0.82);
-            raycaster.set(new THREE.Vector3(x, 2000, z), new THREE.Vector3(0, -1, 0));
-            const hit = raycaster.intersectObject(this.terrain);
-            if (!hit.length) continue;
-
-            const point = hit[0].point;
-            const normal = hit[0].face.normal.clone().transformDirection(this.terrain.matrixWorld).normalize();
+            const point = new THREE.Vector3(x, this.sampleTerrainHeight(x, z), z);
+            const normal = this.sampleTerrainNormal(x, z);
             const slope = 1 - Math.max(0, normal.dot(up));
             const maxSlope = Math.min(0.98, this.params.distributionSlopeLimit * options.slopeMultiplier);
 
@@ -720,48 +803,48 @@ class PETSEngine {
             };
         };
 
-        bindRange('input-amplitude', 'amplitude', () => { this.updateTerrainUniforms(); this.setupEcosystem(); });
-        bindRange('input-frequency', 'frequency', () => { this.updateTerrainUniforms(); this.setupEcosystem(); });
-        bindRange('input-octaves', 'octaves', () => { this.updateTerrainUniforms(); this.setupEcosystem(); });
+        bindRange('input-amplitude', 'amplitude', () => { this.updateTerrainUniforms(); this.scheduleEcosystemRebuild(); });
+        bindRange('input-frequency', 'frequency', () => { this.updateTerrainUniforms(); this.scheduleEcosystemRebuild(); });
+        bindRange('input-octaves', 'octaves', () => { this.updateTerrainUniforms(); this.scheduleEcosystemRebuild(); });
         bindRange('input-time', 'time', () => this.updateSun());
         bindRange('input-fog', 'fog', () => this.updateSun());
         bindRange('input-water-level', 'waterLevel', () => this.updateWaterVisuals());
         bindRange('input-wave-strength', 'waveStrength');
         bindRange('input-wave-speed', 'waveSpeed');
-        bindRange('input-tree-density', 'treeDensity', () => this.setupEcosystem());
-        bindRange('input-rock-density', 'rockDensity', () => this.setupEcosystem());
-        bindRange('input-fern-density', 'fernDensity', () => this.setupEcosystem());
-        bindRange('input-distribution-min-height', 'distributionMinHeight', () => this.setupEcosystem());
-        bindRange('input-distribution-max-height', 'distributionMaxHeight', () => this.setupEcosystem());
-        bindRange('input-distribution-slope', 'distributionSlopeLimit', () => this.setupEcosystem());
-        bindRange('input-scale-min', 'vegetationScaleMin', () => this.setupEcosystem());
-        bindRange('input-scale-max', 'vegetationScaleMax', () => this.setupEcosystem());
+        bindRange('input-tree-density', 'treeDensity', () => this.scheduleEcosystemRebuild());
+        bindRange('input-rock-density', 'rockDensity', () => this.scheduleEcosystemRebuild());
+        bindRange('input-fern-density', 'fernDensity', () => this.scheduleEcosystemRebuild());
+        bindRange('input-distribution-min-height', 'distributionMinHeight', () => this.scheduleEcosystemRebuild());
+        bindRange('input-distribution-max-height', 'distributionMaxHeight', () => this.scheduleEcosystemRebuild());
+        bindRange('input-distribution-slope', 'distributionSlopeLimit', () => this.scheduleEcosystemRebuild());
+        bindRange('input-scale-min', 'vegetationScaleMin', () => this.scheduleEcosystemRebuild());
+        bindRange('input-scale-max', 'vegetationScaleMax', () => this.scheduleEcosystemRebuild());
         bindRange('input-exposure', 'exposure');
         bindRange('input-bloom', 'bloom');
         bindColor('input-grass-color', 'grassColor', () => {
             this.biome.grass.set(this.params.grassColor);
             this.terrainMat.uniforms.uGrassColor.value.copy(this.biome.grass);
-            this.setupEcosystem();
+            this.scheduleEcosystemRebuild();
         });
         bindColor('input-rock-color', 'rockColor', () => {
             this.biome.rock.set(this.params.rockColor);
             this.terrainMat.uniforms.uRockColor.value.copy(this.biome.rock);
-            this.setupEcosystem();
+            this.scheduleEcosystemRebuild();
         });
         bindToggle('input-wireframe', 'wireframe');
         bindToggle('input-autocycle', 'autoCycle');
 
         bindSelect('input-biome-preset', 'activeBiome', (value) => this.applyBiomePreset(value));
-        bindSelect('input-tree-variant', 'selectedTreeVariant', () => this.setupEcosystem());
-        bindSelect('input-rock-variant', 'selectedRockVariant', () => this.setupEcosystem());
-        bindSelect('input-fern-variant', 'selectedFernVariant', () => this.setupEcosystem());
+        bindSelect('input-tree-variant', 'selectedTreeVariant', () => this.scheduleEcosystemRebuild());
+        bindSelect('input-rock-variant', 'selectedRockVariant', () => this.scheduleEcosystemRebuild());
+        bindSelect('input-fern-variant', 'selectedFernVariant', () => this.scheduleEcosystemRebuild());
         bindSelect('input-material-preset', 'selectedMaterialPreset', (value) => this.applyMaterialPreset(value));
 
         document.getElementById('btn-play').onclick = () => this.canvas.requestPointerLock();
         document.getElementById('btn-regenerate').onclick = () => {
             this.params.seed = Math.random() * 1000;
             this.updateTerrainUniforms();
-            this.setupEcosystem();
+            this.scheduleEcosystemRebuild();
         };
 
         document.querySelectorAll('.tab-btn').forEach((btn) => {
